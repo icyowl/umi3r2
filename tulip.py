@@ -1,64 +1,69 @@
+import math
 import numpy as np
 import pygame
-import sys
 from pygame.locals import *
+import sys
 
-pygame.init()
 
-# 画面のサイズと色の設定
 WIDTH, HEIGHT = 800, 600
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
 
-# ウィンドウの作成
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Rectangle Animation')
+class Tulip:
+    def __init__(self, screen):
+        super().__init__()
+        self.screen = screen
+        self.start_pos = WIDTH // 2, HEIGHT // 2
+        self.start_vec = 0, 100
+        self.open_flag = True
+        self.degree = 0
 
-# 長方形の初期設定
-# rect_width, rect_height = 20, 100
-# rect_color = BLACK
-# rect_center = (WIDTH // 2, HEIGHT // 2)
-# rotation_angle = 0
+    @staticmethod
+    def rotated(degree: int) -> np.ndarray:
+        theta = np.deg2rad(degree)
+        return np.array(
+                [[np.cos(theta), -np.sin(theta)],
+                [np.sin(theta), np.cos(theta)]]
+            )
 
-def rotated(degree):
-    theta = np.deg2rad(degree)
-    return np.array(
-            [[np.cos(theta), -np.sin(theta)],
-            [np.sin(theta), np.cos(theta)]]
-        )
+    def petal(self, sign=1):
+        # sign=1 is left, sign=-1 is right
+        if self.open_flag:
+            self.degree += sign * 1
+        else:
+            self.degree += sign * -1
 
-degree = 0
-start_pos = (WIDTH // 2, HEIGHT // 2)
-start_vec = np.array([0, 100])
+        a = self.rotated(self.degree)
+        vec = np.dot(a, self.start_vec)
+        end_pos = self.start_pos[0] + vec[0], self.start_pos[1] - vec[1]
+        pygame.draw.line(self.screen, (255, 255, 255), self.start_pos, end_pos, 2)
 
-clock = pygame.time.Clock()
-open_flag = True
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            running = False
+        if self.degree == sign * 60:
+            self.open_flag = False
+        if self.degree == 0:
+            self.open_flag = True
 
-    screen.fill(WHITE)
 
-    if open_flag:
-        degree += 10
-    else:
-        degree -= 10
+def main():
+    pygame.init()
 
-    a = rotated(degree)
-    vec = np.dot(a, start_vec)
-    end_pos = start_pos[0] + vec[0], start_pos[1] - vec[1]
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    clock = pygame.time.Clock()
+    left_ = Tulip(screen)
+    right_ = Tulip(screen)
 
-    pygame.draw.line(screen, BLACK, start_pos, end_pos, 2)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        
+        screen.fill((0,0,0))
+        
+        left_.petal(sign=1)
+        right_.petal(sign=-1)
 
-    if degree == 90:
-        open_flag = False
-    if degree == 0:
-        open_flag = True
+        pygame.display.flip()
+        clock.tick(60)
 
-    pygame.display.flip()
-    clock.tick(60)
 
-pygame.quit()
-sys.exit()
+if __name__ == '__main__':
+    main()
